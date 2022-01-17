@@ -212,11 +212,15 @@ while True:
 
     print_board()
 
-    best_m, scores = best_move(cur_player)
-    print(f'Recommended move: {best_m}')
-    print(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
+    if cur_player == BRIAN: # automated
+        best_m, scores = best_move(cur_player)
+        print(f'Recommended move: {best_m}')
+        print(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
+        input(f'{player_str} will move accordingly, press enter..')
+        txt = str(best_m)
+    else: # Sasha actually plays
+        txt = input(f'{player_str}, enter your move (0-{WIDTH-1}): ')
 
-    txt = input(f'{player_str}, enter your move (0-{WIDTH-1}): ')
     if txt == 'exit':
         exit(69)
     try:

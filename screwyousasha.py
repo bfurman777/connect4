@@ -4,7 +4,7 @@ import os
 WIDTH, HEIGHT = 7, 6  # dimentions
 EMPTY = '*'
 CONNECT_X = 4
-MAX_DEPTH = 5
+MAX_DEPTH = 6
 
 # ---------------------------------------- #
 BRIAN, SASHA = 'R', 'B'

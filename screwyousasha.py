@@ -1,10 +1,22 @@
+'''
+This will handle the gameplay interaction
+'''
+
 from connectX_util import *
 
+'''
+Print to console and logfile
+'''
+def printLog(*args, **kwargs):
+    print(*args, **kwargs)
+    with open(LOG_FILENAME,'a') as file:
+        print(*args, **kwargs, file=file)
+
 def print_board():
-    print(board)
-    print()
-    print(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
-    print()
+    printLog(board)
+    printLog()
+    printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
+    printLog()
 
 # hack to fix the first person, the error prevents the player switch
 cur_player = FIRST_PLAYER
@@ -13,7 +25,7 @@ while True:
     os.system('cls' if os.name == 'nt' else 'clear')
 
     if error_txt != None:
-        print(error_txt)
+        printLog(error_txt)
         error_txt = None
     else:  # progress the game
         cur_player = next_player(cur_player)
@@ -21,14 +33,11 @@ while True:
 
     print_board()
 
-    if cur_player == BRIAN: # automated
+    if cur_player == BRIAN: # or True: # calculate best move
         best_m, scores = best_move(cur_player)
-        print(f'Recommended move: {best_m}')
-        print(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
-        input(f'{player_str} will move accordingly, press enter..')
-        txt = str(best_m)
-    else: # Sasha actually plays
-        txt = input(f'{player_str}, enter your move (0-{WIDTH-1}): ')
+        printLog(f'Recommended move: {best_m}')
+        printLog(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
+    txt = input(f'{player_str}, enter your move (0-{WIDTH-1}): ')
 
     if txt == 'exit':
         exit(69)
@@ -44,7 +53,7 @@ while True:
     if check_win(cords):
         os.system('cls' if os.name == 'nt' else 'clear')
         print_board()
-        print(f'\n{player_str} wins!!!!!\n')
+        printLog(f'\n{player_str} wins!!!!!\n')
         exit(0)  
 
 # TODO
@@ -52,6 +61,7 @@ while True:
 X interface to play in terminal
 X recursive solution
 - memoization
+- better algo (some score for connect 3 without extra for a dead end 3? how about split 3s?)
 - pygame click to play
 - watch the screen and read/play automatically 
     - click the top left and bottom right spots, it calculates positions to motitor itself

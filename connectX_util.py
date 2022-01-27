@@ -1,3 +1,4 @@
+from linecache import cache
 from tabnanny import check
 import numpy as np
 import os
@@ -10,7 +11,7 @@ FIRST_PLAYER = BRIAN
 WIDTH, HEIGHT = 7, 6  # dimentions (7x6 standard)
 EMPTY = '*'
 CONNECT_X = 4
-MAX_DEPTH = 6
+MAX_DEPTH = 7
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search
@@ -151,6 +152,18 @@ def check_win(cords, to_win=CONNECT_X):
 
     return False
 
+'''
+@return a hashable key value for the current board.
+'''
+def board_hash():
+    ret_str = ''
+    for c in range(WIDTH):
+        colm_str = ''
+        for r in range(HEIGHT-1, -1, -1):
+            if board[r,c] != EMPTY:
+                colm_str += board[r,c]
+        ret_str += ',' + colm_str
+    return ret_str
 
 '''
 def eval_score(cord, depth, player)
@@ -162,13 +175,19 @@ def eval_score(cord, depth, player)
 @param cords: cords of previous turn
 @param player: player of previous turn
 @param layer: current layers of depth remaining
+@param cache: dict of {board_hash:score}
 @return: value of that previous turn's move
 '''
-def eval_score(cords, player, layer):
+def eval_score(cords, player, layer, cache):
+    h = board_hash()
+    if h in cache:
+        return cache[h]
+
+    ret_val = MAX_NEG_SCORE
     if check_win(cords):
-        return CONNECT_X_VALUE * layer  # extra value if you win sooner
+        ret_val = CONNECT_X_VALUE * layer  # extra value if you win sooner
     elif layer == 0:
-        return 0  # too deep
+        ret_val = 0  # too deep
     else:
         connectx_close_score = CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
@@ -178,28 +197,35 @@ def eval_score(cords, player, layer):
             cords = place_move(c, next_p)
             if cords is None:
                 continue
-            scores[c] = eval_score(cords, next_p, layer-1)
+            scores[c] = eval_score(cords, next_p, layer-1, cache)
             remove_move(c)
         scores = [s for s in scores if s != None]  # remove illegal moves
         if len(scores) == 0:
-            return MAX_NEG_SCORE
+            ret_val = MAX_NEG_SCORE
+        else:
+            enemy_score = max(scores)  # calculate max, assuming they do best move every time
+            ret_val = -enemy_score + connectx_close_score
+    
+    cache[h] = ret_val
+    return ret_val
 
-        enemy_score = max(scores)  # calculate max, assuming they do best move every time
-        return -enemy_score + connectx_close_score
 
 '''
 return: (the best move, list of move scores)
 '''
 def best_move(player):
+    cache = dict()
     scores = [MAX_NEG_SCORE for i in range(WIDTH)]
     for c in range(WIDTH):
         cords = place_move(c, player)
         if cords is None:
             continue
-        scores[c] = eval_score(cords, player, MAX_DEPTH)
+        scores[c] = eval_score(cords, player, MAX_DEPTH, cache)
         remove_move(c)
     max_score = max(scores)
     # return np.argmax(scores), scores
     # sketchy fix to get the most "middle" move
     best_scores = [i for i,s in enumerate(scores) if s == max_score]
+    print(list(cache.items())[:10])
+    del cache
     return min(best_scores, key=lambda x:abs(x - (WIDTH // 2))), scores

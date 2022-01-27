@@ -2,6 +2,7 @@ from linecache import cache
 from tabnanny import check
 import numpy as np
 import os
+import multiprocessing as mp
 
 # ---------------------------------------- #
 BRIAN, SASHA = 'R', 'B'
@@ -11,7 +12,7 @@ FIRST_PLAYER = BRIAN
 WIDTH, HEIGHT = 7, 6  # dimentions (7x6 standard)
 EMPTY = '*'
 CONNECT_X = 4
-MAX_DEPTH = 7
+MAX_DEPTH = 9
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search
@@ -184,11 +185,11 @@ def eval_score(cords, player, layer, cache):
 
     ret_val = MAX_NEG_SCORE
     if check_win(cords):
-        ret_val = CONNECT_X_VALUE * layer  # extra value if you win sooner
+        ret_val = CONNECT_X_VALUE * (1 + layer / MAX_DEPTH)  # extra value if you win sooner
     elif layer == 0:
         ret_val = 0  # too deep
     else:
-        connectx_close_score = CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
+        connectx_close_score = 0 # CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
         next_p = next_player(player)
         for c in range(WIDTH):
@@ -209,18 +210,36 @@ def eval_score(cords, player, layer, cache):
     return ret_val
 
 
+def eval_score_proc_wrapper(cords, player, layer, cache, scores):
+    c = cords[1]
+    scores[c] = eval_score(cords, player, layer, cache)
+    return 0
+
 '''
+Uses multiprocessing
 return: (the best move, list of move scores)
 '''
 def best_move(player):
-    cache = dict()
-    scores = [MAX_NEG_SCORE for i in range(WIDTH)]
+    procs = []
+    manager = mp.Manager()
+    scores = manager.list([MAX_NEG_SCORE for i in range(WIDTH)])
+    cache = dict() #manager.dict()
+
     for c in range(WIDTH):
         cords = place_move(c, player)
         if cords is None:
             continue
-        scores[c] = eval_score(cords, player, MAX_DEPTH, cache)
+        
+        p = mp.Process(target=eval_score_proc_wrapper, 
+            args=(cords, player, MAX_DEPTH, cache, scores))
+        procs.append(p)
+        p.start()
+        
         remove_move(c)
+
+    for p in procs:
+        p.join()
+
     max_score = max(scores)
     # return np.argmax(scores), scores
     # sketchy fix to get the most "middle" move

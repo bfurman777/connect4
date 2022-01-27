@@ -155,15 +155,14 @@ def check_win(cords, to_win=CONNECT_X):
 '''
 @return a hashable key value for the current board.
 '''
-def board_hash():
-    ret_str = ''
-    for c in range(WIDTH):
-        colm_str = ''
-        for r in range(HEIGHT-1, -1, -1):
-            if board[r,c] != EMPTY:
-                colm_str += board[r,c]
-        ret_str += ',' + colm_str
-    return ret_str
+def encode_board(board):
+    return board.tobytes()
+
+'''
+@return new numpy array from the encoded board
+'''
+def reconstruct_board(encoded_board):
+    return np.frombuffer(encoded_board, dtype=board.dtype).reshape(board.shape)
 
 '''
 def eval_score(cord, depth, player)
@@ -179,7 +178,7 @@ def eval_score(cord, depth, player)
 @return: value of that previous turn's move
 '''
 def eval_score(cords, player, layer, cache):
-    h = board_hash()
+    h = encode_board(board)
     if h in cache:
         return cache[h]
 
@@ -226,6 +225,5 @@ def best_move(player):
     # return np.argmax(scores), scores
     # sketchy fix to get the most "middle" move
     best_scores = [i for i,s in enumerate(scores) if s == max_score]
-    print(list(cache.items())[:10])
     del cache
     return min(best_scores, key=lambda x:abs(x - (WIDTH // 2))), scores

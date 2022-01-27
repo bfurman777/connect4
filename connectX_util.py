@@ -8,17 +8,33 @@ BRIAN, SASHA = 'R', 'B'
 FIRST_PLAYER = BRIAN
 # ---------------------------------------- #
 
-WIDTH, HEIGHT = 7, 6  # dimentions (7x6 standard)
+WIDTH, HEIGHT = 2, 2  # dimentions (7x6 standard)
 EMPTY = '*'
-CONNECT_X = 4
-MAX_DEPTH = 7
+CONNECT_X = 2
+MAX_DEPTH = 6
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search
-CONNECT_X_CLOSE_VALUE = 69  # score added for a setup for winning (aka 3 in a row)
 MAX_NEG_SCORE = -9999999  # represents an illegal move that should never be chosen
 
 board = np.full((HEIGHT,WIDTH), EMPTY)
+
+'''
+Funky idea:
+We maintain a graph of graphs of graphs (dict of dict of dicts...)
+When a move is made:
+    del other untaked sub-graphs
+    BFS from the taken graph
+        collect {node:parent} in a graph (essentially inverted graph)
+        negate the values?
+        collect a set of the frontier (non-win max-depth edges)
+    for each node in the frontier:
+        collect the scores of childs (or win-score)
+        append parent to the end of the frontier queue
+TODO: later delete children if this node absorbed a win from another child (an early win > later loss)
+'''
+head_graph = dict()  # {node:[graph]}
+
 
 '''
 Check if a cord is on the board
@@ -156,7 +172,8 @@ def check_win(cords, to_win=CONNECT_X):
 @return a hashable key value for the current board.
 '''
 def encode_board(board):
-    return board.tobytes()
+    return str(board)  # TODO temp for testing
+    # return board.tobytes()
 
 '''
 @return new numpy array from the encoded board
@@ -164,31 +181,42 @@ def encode_board(board):
 def reconstruct_board(encoded_board):
     return np.frombuffer(encoded_board, dtype=board.dtype).reshape(board.shape)
 
+def print_graph(g, indent=0):
+    for k,v in g.items():
+        print('-' * indent + '>', k)
+        print_graph(v, indent + 1)
+
+'''
+@param hash of a board
+@return score, assuming all children have their score updated
+'''
+def collect_score(board_h):
+    pass
+
+
 '''
 def eval_score(cord, depth, player)
-    win:        return 1000
+    win:        return CONNECT_X_VALUE
     max_depth:  return 0
-    connectX-1: return 50 + (n/a)
     n/a:        return max([-recurse(m, depth+1, next_player) for m in moves])
 
 @param cords: cords of previous turn
 @param player: player of previous turn
 @param layer: current layers of depth remaining
-@param cache: dict of {board_hash:score}
+@param graph: graph this move is being added to
 @return: value of that previous turn's move
 '''
-def eval_score(cords, player, layer, cache):
+def eval_score(cords, player, layer, graph):
     h = encode_board(board)
-    if h in cache:
-        return cache[h]
+    if h not in graph:
+        graph[h] = dict()
 
     ret_val = MAX_NEG_SCORE
     if check_win(cords):
-        ret_val = CONNECT_X_VALUE * layer  # extra value if you win sooner
+        ret_val = CONNECT_X_VALUE
     elif layer == 0:
         ret_val = 0  # too deep
     else:
-        connectx_close_score = CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
         next_p = next_player(player)
         for c in range(WIDTH):
@@ -196,14 +224,14 @@ def eval_score(cords, player, layer, cache):
             cords = place_move(c, next_p)
             if cords is None:
                 continue
-            scores[c] = eval_score(cords, next_p, layer-1, cache)
+            scores[c] = eval_score(cords, next_p, layer-1, graph[h])
             remove_move(c)
         scores = [s for s in scores if s != None]  # remove illegal moves
         if len(scores) == 0:
             ret_val = MAX_NEG_SCORE
         else:
             enemy_score = max(scores)  # calculate max, assuming they do best move every time
-            ret_val = -enemy_score + connectx_close_score
+            ret_val = -enemy_score
     
     cache[h] = ret_val
     return ret_val
@@ -213,17 +241,16 @@ def eval_score(cords, player, layer, cache):
 return: (the best move, list of move scores)
 '''
 def best_move(player):
-    cache = dict()
     scores = [MAX_NEG_SCORE for i in range(WIDTH)]
     for c in range(WIDTH):
         cords = place_move(c, player)
         if cords is None:
             continue
-        scores[c] = eval_score(cords, player, MAX_DEPTH, cache)
+        scores[c] = eval_score(cords, player, MAX_DEPTH, head_graph)
         remove_move(c)
     max_score = max(scores)
     # return np.argmax(scores), scores
     # sketchy fix to get the most "middle" move
     best_scores = [i for i,s in enumerate(scores) if s == max_score]
-    del cache
+    print_graph(head_graph)
     return min(best_scores, key=lambda x:abs(x - (WIDTH // 2))), scores

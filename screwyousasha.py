@@ -4,19 +4,13 @@ This will handle the gameplay interaction
 
 from connectX_util import *
 
-'''
-Print to console and logfile
-'''
-def printLog(*args, **kwargs):
-    print(*args, **kwargs)
-    with open(LOG_FILENAME,'a') as file:
-        print(*args, **kwargs, file=file)
-
 def print_board():
     printLog(board)
     printLog()
     printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
     printLog()
+
+os.system('rm log.txt')
 
 # hack to fix the first person, the error prevents the player switch
 cur_player = FIRST_PLAYER

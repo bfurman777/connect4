@@ -8,10 +8,10 @@ BRIAN, SASHA = 'R', 'B'
 FIRST_PLAYER = BRIAN
 # ---------------------------------------- #
 
-WIDTH, HEIGHT = 2, 2  # dimentions (7x6 standard)
+WIDTH, HEIGHT = 3, 2  # dimentions (7x6 standard)
 EMPTY = '*'
 CONNECT_X = 2
-MAX_DEPTH = 6
+MAX_DEPTH = 3
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search
@@ -34,7 +34,15 @@ When a move is made:
 TODO: later delete children if this node absorbed a win from another child (an early win > later loss)
 '''
 head_graph = dict()  # {node:[graph]}
+score = dict()  # {node:score}
 
+'''
+Print to console and logfile
+'''
+def printLog(*args, **kwargs):
+    print(*args, **kwargs)
+    with open(LOG_FILENAME,'a') as file:
+        print(*args, **kwargs, file=file)
 
 '''
 Check if a cord is on the board
@@ -183,7 +191,8 @@ def reconstruct_board(encoded_board):
 
 def print_graph(g, indent=0):
     for k,v in g.items():
-        print('-' * indent + '>', k)
+        printLog('-' * indent + '>')
+        printLog(k)
         print_graph(v, indent + 1)
 
 '''
@@ -248,9 +257,11 @@ def best_move(player):
             continue
         scores[c] = eval_score(cords, player, MAX_DEPTH, head_graph)
         remove_move(c)
-    max_score = max(scores)
-    # return np.argmax(scores), scores
-    # sketchy fix to get the most "middle" move
-    best_scores = [i for i,s in enumerate(scores) if s == max_score]
+
     print_graph(head_graph)
+    
+    # return np.argmax(scores), scores
+    # hack to get the most "middle" move
+    max_score = max(scores)
+    best_scores = [i for i,s in enumerate(scores) if s == max_score]
     return min(best_scores, key=lambda x:abs(x - (WIDTH // 2))), scores

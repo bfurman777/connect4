@@ -32,6 +32,12 @@ def printLog(*args, **kwargs):
     with open(LOG_FILENAME,'a') as file:
         print(*args, **kwargs, file=file)
 
+def print_board():
+    printLog(board)
+    printLog()
+    printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
+    printLog()
+    
 '''
 Check if a cord is on the board
 @param cords: (r,c) tuple of just placed move

@@ -4,17 +4,24 @@ This will handle the gameplay interaction
 
 from connectX_util import *
 
-def print_board():
-    printLog(board)
-    printLog()
-    printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
-    printLog()
+
+################## MAIN ##################
+
+# hack to fix the first person, the error_txt prevents the player switch
+cur_player = FIRST_PLAYER
+error_txt = f'Welcome to Connect{CONNECT_X}™!\n'
+
+# option to type in a board (load)
+txt = input('(S)tart or (L)oad? ')
+if txt in ['l', 'L', 'load', 'Load']:
+    txt = input(f'Load (p1={cur_player}) -> type in sequence of moves: ')
+    for chr in txt:
+        c = int(chr)
+        if place_move(c, cur_player):
+            cur_player = next_player(cur_player)
 
 os.system('rm log.txt')
 
-# hack to fix the first person, the error prevents the player switch
-cur_player = FIRST_PLAYER
-error_txt = f'Welcome to Connect{CONNECT_X}™!\n'
 while True:
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -35,13 +42,6 @@ while True:
 
     if txt == 'exit':
         exit(69)
-    if txt == 'board':
-        txt = input('Type in sequence of moves: ')
-        for chr in txt:
-            c = int(chr)
-            place_move(c, cur_player)
-            cur_player = next_player(cur_player)
-        continue
     try:
         move = int(txt)
         cords = place_move(move, cur_player)

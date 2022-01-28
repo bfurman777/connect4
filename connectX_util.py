@@ -6,7 +6,7 @@ import multiprocessing as mp
 import time
 
 # ---------------------------------------- #
-BRIAN, SASHA = 'R', 'B'
+BRIAN, SASHA = 'G', 'B'
 FIRST_PLAYER = BRIAN
 # ---------------------------------------- #
 
@@ -20,7 +20,9 @@ CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the 
 CONNECT_X_CLOSE_VALUE = 69  # score added for a setup for winning (aka 3 in a row)
 MAX_NEG_SCORE = -9999999  # represents an illegal move that should never be chosen
 
-board = np.full((HEIGHT,WIDTH), EMPTY)
+TIME_DIFF_INC_DEPTH = 3.1  # if the time if less that this (sec), increament MAX_DEPTH
+
+board = np.full((HEIGHT,WIDTH), EMPTY) 
 
 '''
 Print to console and logfile
@@ -198,7 +200,7 @@ def eval_score(cords, player, layer, cache):
     elif layer == 0:
         ret_val = 0  # too deep
     else:
-        connectx_close_score = 0 # CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
+        connectx_close_score = CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
         next_p = next_player(player)
         for c in range(WIDTH):
@@ -225,11 +227,13 @@ def eval_score_proc_wrapper(cords, player, layer, cache, scores):
     return 0
 
 '''
-Uses multiprocessing
+Uses multiprocessing to find best move
 return: (the best move, list of move scores)
 '''
 def best_move(player):
     start_time = time.time()
+
+    global MAX_DEPTH
     procs = []
     manager = mp.Manager()
     scores = manager.list([MAX_NEG_SCORE for i in range(WIDTH)])
@@ -250,12 +254,17 @@ def best_move(player):
     for p in procs:
         p.join()
 
-    max_score = max(scores)
-    # return np.argmax(scores), scores
     # sketchy fix to get the most "middle" move
+    max_score = max(scores)
     best_scores = [i for i,s in enumerate(scores) if s == max_score]
+    
     del cache
-
+    diff_time = int((time.time() - start_time) * 100) / 100.0  # 100th second
     move = min(best_scores, key=lambda x:abs(x - (WIDTH // 2)))
-    printLog(f'Calculated best move of ({move}) in {int((time.time() - start_time) * 100) / 100.0} seconds\n')
+    printLog(f'Calculated best move of ({move}):   time={diff_time}s   depth={MAX_DEPTH}\n')
+
+    if diff_time < TIME_DIFF_INC_DEPTH:
+        MAX_DEPTH += 1
+        printLog("maximum depth has increased..\n")
+
     return move, scores

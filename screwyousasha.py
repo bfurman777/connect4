@@ -10,6 +10,8 @@ def print_board():
     printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
     printLog()
 
+os.system('rm log.txt')
+
 # hack to fix the first person, the error prevents the player switch
 cur_player = FIRST_PLAYER
 error_txt = f'Welcome to Connect{CONNECT_X}™!\n'
@@ -33,6 +35,13 @@ while True:
 
     if txt == 'exit':
         exit(69)
+    if txt == 'board':
+        txt = input('Type in sequence of moves: ')
+        for chr in txt:
+            c = int(chr)
+            place_move(c, cur_player)
+            cur_player = next_player(cur_player)
+        continue
     try:
         move = int(txt)
         cords = place_move(move, cur_player)

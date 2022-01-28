@@ -9,10 +9,10 @@ BRIAN, SASHA = 'G', 'B'
 FIRST_PLAYER = BRIAN
 # ---------------------------------------- #
 
-WIDTH, HEIGHT = 3, 2  # dimentions (7x6 standard)
+WIDTH, HEIGHT = 7, 6  # dimentions (7x6 standard)
 EMPTY = '*'
 CONNECT_X = 4
-MAX_DEPTH = 9
+MAX_DEPTH = 7
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search

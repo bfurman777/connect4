@@ -35,6 +35,13 @@ while True:
 
     if txt == 'exit':
         exit(69)
+    if txt == 'board':
+        txt = input('Type in sequence of moves: ')
+        for chr in txt:
+            c = int(chr)
+            place_move(c, cur_player)
+            cur_player = next_player(cur_player)
+        continue
     try:
         move = int(txt)
         cords = place_move(move, cur_player)

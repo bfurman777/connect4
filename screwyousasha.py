@@ -4,14 +4,6 @@ This will handle the gameplay interaction
 
 from connectX_util import *
 
-'''
-Print to console and logfile
-'''
-def printLog(*args, **kwargs):
-    print(*args, **kwargs)
-    with open(LOG_FILENAME,'a') as file:
-        print(*args, **kwargs, file=file)
-
 def print_board():
     printLog(board)
     printLog()

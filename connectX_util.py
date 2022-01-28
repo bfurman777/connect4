@@ -5,7 +5,7 @@ import os
 import multiprocessing as mp
 
 # ---------------------------------------- #
-BRIAN, SASHA = 'R', 'B'
+BRIAN, SASHA = 'G', 'B'
 FIRST_PLAYER = BRIAN
 # ---------------------------------------- #
 

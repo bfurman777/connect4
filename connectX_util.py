@@ -21,7 +21,6 @@ MAX_NEG_SCORE = -9999999  # represents an illegal move that should never be chos
 
 TIME_DIFF_INC_DEPTH = 3.1  # if the time if less that this (sec), increament MAX_DEPTH
 
-board = np.full((HEIGHT,WIDTH), EMPTY) 
 
 '''
 Print to console and logfile
@@ -31,12 +30,15 @@ def printLog(*args, **kwargs):
     with open(LOG_FILENAME,'a') as file:
         print(*args, **kwargs, file=file)
 
-def print_board():
+def print_board(board):
     printLog(board)
     printLog()
     printLog(np.array([[str(i) for i in range(0,WIDTH)]]), '(columns)')
     printLog()
-    
+
+def empty_board():
+    return np.full((HEIGHT,WIDTH), EMPTY) 
+
 '''
 Check if a cord is on the board
 @param cords: (r,c) tuple of just placed move
@@ -52,7 +54,7 @@ Updates the board with a move, if it is valid
 @param player: player value
 return: (r,c) move cordinates on success, None on invalid move
 '''
-def place_move(move, player):
+def place_move(move, player, board):
     c = move
     if not valid_cord((0,c)):  # does colm exist?
         return None
@@ -71,7 +73,7 @@ def place_move(move, player):
 Remove the top of a colm (assuming move already placed)
 @param move: colm index of previously placed move
 '''
-def remove_move(move):
+def remove_move(move, board):
     c = move
     colm = board[:,c]
     for r in range(HEIGHT):
@@ -88,7 +90,7 @@ Check a win of a move (assuming move already placed)
 @param to_win: number in a row needed to win
 @return True on win, False otherwise
 '''
-def check_win(cords, to_win=CONNECT_X):
+def check_win(cords, board, to_win=CONNECT_X):
     rN, cN = cords  # new chip cords
     player = board[rN,cN]
     count = 1  # how many in a row so far
@@ -194,27 +196,27 @@ def eval_score(cord, depth, player)
 @param cache: dict of {board_hash:score}
 @return: value of that previous turn's move
 '''
-def eval_score(cords, player, layer, cache):
+def eval_score(cords, player, layer, cache, board):
     h = encode_board(board)
     if h in cache:
         return cache[h]
 
     ret_val = MAX_NEG_SCORE
-    if check_win(cords):
-        ret_val = CONNECT_X_VALUE * (1 + layer / MAX_DEPTH)  # extra value if you win sooner
+    if check_win(cords, board):
+        ret_val = CONNECT_X_VALUE * (1 + (layer / MAX_DEPTH))  # extra value if you win sooner
     elif layer == 0:
         ret_val = 0  # too deep
     else:
-        connectx_close_score = CONNECT_X_CLOSE_VALUE if CONNECT_X_CLOSE_VALUE and check_win(cords, CONNECT_X-1) else 0
+        connectx_close_score = CONNECT_X_CLOSE_VALUE if CONNECT_X_CLOSE_VALUE and check_win(cords, board, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
         next_p = next_player(player)
         for c in range(WIDTH):
             # make a move, store it on stack, recurse, undo move - all on the same board
-            cords = place_move(c, next_p)
+            cords = place_move(c, next_p, board)
             if cords is None:
                 continue
-            scores[c] = eval_score(cords, next_p, layer-1, cache)
-            remove_move(c)
+            scores[c] = eval_score(cords, next_p, layer-1, cache, board)
+            remove_move(c, board)
         scores = [s for s in scores if s != None]  # remove illegal moves
         if len(scores) == 0:
             ret_val = MAX_NEG_SCORE
@@ -226,16 +228,16 @@ def eval_score(cords, player, layer, cache):
     return ret_val
 
 
-def eval_score_proc_wrapper(cords, player, layer, cache, scores):
+def eval_score_proc_wrapper(cords, player, layer, cache, scores, board):
     c = cords[1]
-    scores[c] = eval_score(cords, player, layer, cache)
+    scores[c] = eval_score(cords, player, layer, cache, board)
     return 0
 
 '''
 Uses multiprocessing to find best move
 return: (the best move, list of move scores)
 '''
-def best_move(player):
+def best_move(player, board):
     start_time = time.time()
 
     global MAX_DEPTH
@@ -245,16 +247,16 @@ def best_move(player):
     cache = dict() #manager.dict()
 
     for c in range(WIDTH):
-        cords = place_move(c, player)
+        cords = place_move(c, player, board)
         if cords is None:
             continue
         
         p = mp.Process(target=eval_score_proc_wrapper, 
-            args=(cords, player, MAX_DEPTH, cache, scores))
+            args=(cords, player, MAX_DEPTH, cache, scores, board))
         procs.append(p)
         p.start()
         
-        remove_move(c)
+        remove_move(c, board)
 
     for p in procs:
         p.join()

@@ -1,23 +1,22 @@
 from linecache import cache
 from tabnanny import check
 import numpy as np
-import os
 import multiprocessing as mp
 import time
 
 # ---------------------------------------- #
 BRIAN, SASHA = 'G', 'B'
-FIRST_PLAYER = BRIAN
+FIRST_PLAYER = SASHA
 # ---------------------------------------- #
 
-WIDTH, HEIGHT = 7, 6  # dimentions (7x6 standard)
+WIDTH, HEIGHT = 7,6  # dimentions (7x6 standard)
 EMPTY = '*'
 CONNECT_X = 4
-MAX_DEPTH = 9
+MAX_DEPTH = 9  # starting depth that increases over time - 9 on standard board
 LOG_FILENAME = 'log.txt'
 
 CONNECT_X_VALUE = 1000  # score for a win, multiplied by the layers left in the search
-CONNECT_X_CLOSE_VALUE = 69  # score added for a setup for winning (aka 3 in a row)
+CONNECT_X_CLOSE_VALUE = 0 #69  # score added for a setup for winning (aka 3 in a row)
 MAX_NEG_SCORE = -9999999  # represents an illegal move that should never be chosen
 
 TIME_DIFF_INC_DEPTH = 3.1  # if the time if less that this (sec), increament MAX_DEPTH
@@ -206,7 +205,7 @@ def eval_score(cords, player, layer, cache):
     elif layer == 0:
         ret_val = 0  # too deep
     else:
-        connectx_close_score = CONNECT_X_CLOSE_VALUE if check_win(cords, CONNECT_X-1) else 0
+        connectx_close_score = CONNECT_X_CLOSE_VALUE if CONNECT_X_CLOSE_VALUE and check_win(cords, CONNECT_X-1) else 0
         scores = [None for i in range(WIDTH)]
         next_p = next_player(player)
         for c in range(WIDTH):

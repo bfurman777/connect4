@@ -1,13 +1,18 @@
 '''
-This will handle the gameplay interaction
+This will handle the gameplay interaction.
+Please run from linux.
 '''
 
 from connectX_util import *
-
+import os
 
 ################## MAIN ##################
 
-# hack to fix the first person, the error_txt prevents the player switch
+if os.name == 'nt':
+    print('Please run from unix.')
+    exit(420)
+
+# hack to fix the first person on the first loop, the error_txt prevents the player switch
 cur_player = FIRST_PLAYER
 error_txt = f'Welcome to Connect{CONNECT_X}™!\n'
 

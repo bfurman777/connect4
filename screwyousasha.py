@@ -27,7 +27,8 @@ if __name__ == '__main__':
             if place_move(c, cur_player, board):
                 cur_player = next_player(cur_player)
 
-    os.system('rm log.txt')
+    with open(LOG_FILENAME,'w') as file:
+        file.write('')  # overwrite file
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')

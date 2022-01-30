@@ -45,6 +45,10 @@ if __name__ == '__main__':
             best_m, scores = best_move(cur_player, board)
             printLog(f'Recommended move: {best_m}')
             printLog(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
+        elif cur_player == SASHA:
+            best_m, scores = best_move_lite(cur_player, board)
+            printLog(f'Sasha, don\'t screw up!')
+            printLog(f'scores: {[(m,int(s)) for m,s in enumerate(scores)]}\n')
         txt = input(f'{player_str}, enter your move (0-{WIDTH-1}): ')
 
         if txt == 'exit':

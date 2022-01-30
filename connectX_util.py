@@ -234,6 +234,34 @@ def eval_score_proc_wrapper(cords, player, layer, cache, scores, board):
     return 0
 
 '''
+Single thread to find best move 
+return: (the best move, list of move scores)
+'''
+def best_move_lite(player, board, depth=2):
+    start_time = time.time()
+
+    scores = [MAX_NEG_SCORE for i in range(WIDTH)]
+    cache = dict() #manager.dict()
+
+    for c in range(WIDTH):
+        cords = place_move(c, player, board)
+        if cords is None:
+            continue
+        
+        eval_score_proc_wrapper(cords, player, depth, cache, scores, board)
+
+        remove_move(c, board)
+
+    # sketchy fix to get the most "middle" move
+    max_score = max(scores)
+    best_scores = [i for i,s in enumerate(scores) if s == max_score]
+    
+    del cache
+    move = min(best_scores, key=lambda x:abs(x - (WIDTH // 2)))
+
+    return move, scores
+
+'''
 Uses multiprocessing to find best move
 return: (the best move, list of move scores)
 '''
